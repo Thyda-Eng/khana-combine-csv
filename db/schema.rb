@@ -11,6 +11,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 0) do
+ActiveRecord::Schema.define(version: 20180209031722) do
+
+  create_table "reports", force: :cascade do |t|
+    t.string   "phone_number",       limit: 255
+    t.integer  "week",               limit: 4
+    t.integer  "index",              limit: 4
+    t.integer  "connector_a",        limit: 4
+    t.integer  "connector_b",        limit: 4
+    t.integer  "connector_c",        limit: 4
+    t.integer  "total_sent_sms",     limit: 4
+    t.integer  "total_received_sms", limit: 4
+    t.datetime "created_at",                     null: false
+    t.datetime "updated_at",                     null: false
+  end
 
 end
