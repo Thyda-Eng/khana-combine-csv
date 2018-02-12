@@ -15,6 +15,7 @@ public/assets
 public/photo_field
 public/print
 public/tinymce_photo
+public/reports
 
 .bundle
 .idea
