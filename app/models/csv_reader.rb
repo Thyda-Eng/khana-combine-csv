@@ -1,5 +1,7 @@
+require 'csv'
+
 class CSVReader
-  require 'csv'
+  extend ReportParser
 
   def self.combine(source_path, destination_path)
     self.import(source_path)
@@ -7,22 +9,22 @@ class CSVReader
   end
 
   private
-  def self.import(path)
-    files = Dir.glob("#{path}/*.csv")
-    files.each do |file|
+
+  def self.import(dir_path)
+    files_in(dir_path).each do |file|
       csv_text = File.read(file)
       csv = CSV.parse(csv_text, :headers => true)
+
+      report_attr = {
+        week: csv.headers[3].match(/w([^\/.]*).*$/)[1],
+        index: csv.headers[3].match(/w\d+.([^\/.-]*)/)[1]
+      }
+
       csv.each do |row|
-        report = Report.find_or_initialize_by(phone_number: row[0])
-        report.phone_number = row[0]
-        report.week = csv.headers[3].match(/w([^\/.]*).*$/)[1]
-        report.index = csv.headers[3].match(/w\d+.([^\/.-]*)/)[1]
-        report.connector_a = row[3]
-        report.connector_b = row[4]
-        report.connector_c = row[5]
-        report.total_sent_sms = row[7]
-        report.total_received_sms = row[8]
-        report.save
+        report_attr.merge!(parse(row))
+
+        report = Report.find_or_initialize_by(report_attr.slice(:phone_number, :week, :index))
+        report.update_attributes(report_attr)
       end
     end
   end
@@ -41,8 +43,8 @@ class CSVReader
           index = tmp[1]
 
           if !item[week].nil? && !item[week][index].nil?
-            total_sent_sms = total_sent_sms + item[week][index][:total_sent_sms]
-            total_received_sms = total_received_sms + item[week][index][:total_received_sms]
+            total_sent_sms = total_sent_sms + item[week][index][:total_sent_sms] if item[week][index][:total_sent_sms].present?
+            total_received_sms = total_received_sms + item[week][index][:total_received_sms] if item[week][index][:total_received_sms].present?
 
             cols = cols + [item[week][index][:connector_a],
                      item[week][index][:connector_b],
@@ -99,6 +101,10 @@ class CSVReader
       items[report.phone_number] = item
     end
     return items
+  end
+
+  def self.files_in(dir_path, pattern = '*.csv')
+    Dir.glob(File.join(dir_path, pattern)).sort_by { |x| (x[/\d+/].to_i) }
   end
 
 end
